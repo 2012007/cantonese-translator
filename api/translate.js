@@ -71,6 +71,16 @@ export default async function handler(req, res) {
       throw new Error('翻译数据格式错误');
     }
 
+    // Increment translation counter in Upstash (fire and forget)
+    const redisUrl = process.env.UPSTASH_REDIS_KV_REST_API_URL;
+    const redisToken = process.env.UPSTASH_REDIS_KV_REST_API_TOKEN;
+    if (redisUrl && redisToken) {
+      fetch(redisUrl + '/incr/total_translations', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + redisToken },
+      }).catch(() => {}); // silently ignore errors
+    }
+
     return res.status(200).json(parsed);
 
   } catch (err) {
