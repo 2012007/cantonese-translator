@@ -385,6 +385,32 @@
     .word-grid { grid-template-columns: 1fr; }
     .cantonese-text { font-size: 19px; }
   }
+
+  /* ── Speak button ── */
+  .btn-speak {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px; font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px; padding: 7px 14px; cursor: pointer;
+    transition: all 0.2s; color: var(--text-dim);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn-speak:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+  .btn-speak.playing { background: var(--blue); color: white; border-color: var(--blue); }
+
+  .speak-note {
+    font-size: 11px; color: var(--text-muted); margin-top: 8px;
+  }
+
+  /* ── Clickable char units ── */
+  .char-unit.clickable {
+    cursor: pointer; border-radius: 6px;
+    padding: 4px 2px; transition: background 0.15s;
+  }
+  .char-unit.clickable:hover { background: var(--blue-light); }
+  .char-unit.clickable:hover .char { color: var(--blue); }
+  .char-unit.clickable.speaking .char { color: var(--blue); }
+  .char-unit.clickable.speaking .ping { color: var(--blue-mid); }
+
 </style>
 </head>
 <body>
@@ -440,8 +466,15 @@
           <div class="cantonese-text" id="cantonese-text"></div>
           <div class="jyutping-row" id="jyutping-row"></div>
           <div class="jyutping-note">
-            ※ 蓝色为粤拼注音。不懂粤拼？
+            ※ 蓝色为粤拼注音。点击单字可朗读。不懂粤拼？
             <button onclick="openGuide()">查看粤拼说明 →</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
+            <button class="btn-speak" id="btn-speak" onclick="toggleSpeak()">
+              <span id="speak-icon">🔊</span>
+              <span id="speak-text">朗读全文</span>
+            </button>
+            <span class="speak-note">※ 发音效果取决于设备语音包，有粤语包（zh-HK）效果最佳</span>
           </div>
         </div>
         <div class="result-explain" id="result-explain"></div>
@@ -744,6 +777,90 @@ function setLoading(on) {
 function copyResult() {
   if (!currentCantonese) return;
   navigator.clipboard.writeText(currentCantonese).then(() => showToast('已复制', 'success'));
+}
+
+// ─── RESULT SPEECH ───────────────────────────────────
+let isSpeakingFull = false;
+
+function getVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find(v => v.lang === 'zh-HK' || v.lang === 'yue' || v.name.toLowerCase().includes('cantonese'))
+    || voices.find(v => v.lang.startsWith('zh'))
+    || null;
+}
+
+function speakChar(unit, char) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  // Reset full-speak button if active
+  if (isSpeakingFull) {
+    isSpeakingFull = false;
+    updateSpeakBtn(false);
+  }
+
+  // Visual feedback
+  document.querySelectorAll('.char-unit.speaking').forEach(u => u.classList.remove('speaking'));
+
+  setTimeout(() => {
+    const utter = new SpeechSynthesisUtterance(char);
+    const v = getVoice();
+    if (v) { utter.voice = v; utter.lang = v.lang; }
+    else { utter.lang = 'zh-HK'; }
+    utter.rate = 0.7;
+
+    unit.classList.add('speaking');
+    utter.onend = () => unit.classList.remove('speaking');
+    utter.onerror = () => unit.classList.remove('speaking');
+    window.speechSynthesis.speak(utter);
+  }, 50);
+}
+
+function toggleSpeak() {
+  if (!window.speechSynthesis) {
+    showToast('您的浏览器不支持语音功能', 'error');
+    return;
+  }
+  if (!currentCantonese) return;
+
+  if (isSpeakingFull) {
+    window.speechSynthesis.cancel();
+    isSpeakingFull = false;
+    updateSpeakBtn(false);
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    const utter = new SpeechSynthesisUtterance(currentCantonese);
+    const v = getVoice();
+    if (v) { utter.voice = v; utter.lang = v.lang; }
+    else { utter.lang = 'zh-HK'; }
+    utter.rate = 0.8;
+
+    isSpeakingFull = true;
+    updateSpeakBtn(true);
+
+    utter.onend = () => { isSpeakingFull = false; updateSpeakBtn(false); };
+    utter.onerror = () => { isSpeakingFull = false; updateSpeakBtn(false); };
+    window.speechSynthesis.speak(utter);
+  }, 50);
+}
+
+function updateSpeakBtn(playing) {
+  const btn = document.getElementById('btn-speak');
+  const icon = document.getElementById('speak-icon');
+  const text = document.getElementById('speak-text');
+  if (!btn) return;
+  if (playing) {
+    btn.classList.add('playing');
+    icon.textContent = '⏹';
+    text.textContent = '停止朗读';
+  } else {
+    btn.classList.remove('playing');
+    icon.textContent = '🔊';
+    text.textContent = '朗读全文';
+  }
 }
 
 // ─── TONE AUDIO ─────────────────────────────────────
