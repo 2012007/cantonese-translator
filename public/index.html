@@ -399,13 +399,33 @@
 
   /* ── Clickable char units ── */
   .char-unit.clickable {
-    cursor: pointer; border-radius: 6px;
-    padding: 4px 2px; transition: background 0.15s;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 6px 8px;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
   }
-  .char-unit.clickable:hover { background: var(--blue-light); }
+  .char-unit.clickable:hover {
+    background: white;
+    border-color: var(--blue-mid);
+    box-shadow: 0 2px 10px rgba(42,100,150,0.18);
+    transform: translateY(-2px);
+  }
   .char-unit.clickable:hover .char { color: var(--blue); }
-  .char-unit.clickable.speaking .char { color: var(--blue); }
-  .char-unit.clickable.speaking .ping { color: var(--blue-mid); }
+  .char-unit.clickable:hover .ping { color: var(--blue-mid); }
+  .char-unit.clickable:active {
+    transform: translateY(0);
+    box-shadow: none;
+    background: var(--blue-light);
+  }
+  .char-unit.clickable.speaking {
+    background: var(--blue);
+    border-color: var(--blue);
+    box-shadow: 0 2px 10px rgba(42,100,150,0.3);
+  }
+  .char-unit.clickable.speaking .char { color: white; }
+  .char-unit.clickable.speaking .ping { color: rgba(255,255,255,0.8); }
 
 </style>
 </head>
