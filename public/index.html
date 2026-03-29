@@ -486,42 +486,42 @@
           <div class="tone-name">阴平</div>
           <div class="tone-desc">高平，调值55</div>
           <div class="tone-eg">诗 si1</div>
-          <button class="tone-play" onclick="playTone(this,'si1','si1：诗，高平调，像念数字"一"时那种平稳的高音')">▶ 试听</button>
+          <button class="tone-play" onclick="playTone(this,'诗')">▶ 试听</button>
         </div>
         <div class="tone-card">
           <div class="tone-num">2</div>
           <div class="tone-name">阴上</div>
           <div class="tone-desc">高升，调值35</div>
           <div class="tone-eg">史 si2</div>
-          <button class="tone-play" onclick="playTone(this,'si2','si2：史，声调由中升高，类似普通话问句语气')">▶ 试听</button>
+          <button class="tone-play" onclick="playTone(this,'史')">▶ 试听</button>
         </div>
         <div class="tone-card">
           <div class="tone-num">3</div>
           <div class="tone-name">阴去</div>
           <div class="tone-desc">中平，调值33</div>
           <div class="tone-eg">试 si3</div>
-          <button class="tone-play" onclick="playTone(this,'si3','si3：试，中等平调，比第一声低，比第六声高')">▶ 试听</button>
+          <button class="tone-play" onclick="playTone(this,'试')">▶ 试听</button>
         </div>
         <div class="tone-card">
           <div class="tone-num">4</div>
           <div class="tone-name">阳平</div>
           <div class="tone-desc">低降，调值21</div>
           <div class="tone-eg">时 si4</div>
-          <button class="tone-play" onclick="playTone(this,'si4','si4：时，从低音开始往下降，类似叹气的感觉')">▶ 试听</button>
+          <button class="tone-play" onclick="playTone(this,'时')">▶ 试听</button>
         </div>
         <div class="tone-card">
           <div class="tone-num">5</div>
           <div class="tone-name">阳上</div>
           <div class="tone-desc">低升，调值23</div>
           <div class="tone-eg">市 si5</div>
-          <button class="tone-play" onclick="playTone(this,'si5','si5：市，从低音升起，类似普通话"啊？"的疑问语气')">▶ 试听</button>
+          <button class="tone-play" onclick="playTone(this,'市')">▶ 试听</button>
         </div>
         <div class="tone-card">
           <div class="tone-num">6</div>
           <div class="tone-name">阳去</div>
           <div class="tone-desc">低平，调值22</div>
           <div class="tone-eg">事 si6</div>
-          <button class="tone-play" onclick="playTone(this,'si6','si6：事，低沉平稳，像用低沉的声音平静说话')">▶ 试听</button>
+          <button class="tone-play" onclick="playTone(this,'事')">▶ 试听</button>
         </div>
       </div>
       <div class="note-box">
@@ -746,50 +746,46 @@ function copyResult() {
   navigator.clipboard.writeText(currentCantonese).then(() => showToast('已复制', 'success'));
 }
 
-// ─── TONE AUDIO (Web Speech API) ────────────────────
-let currentUtterance = null;
-
-function playTone(btn, toneCode, description) {
+// ─── TONE AUDIO ─────────────────────────────────────
+function playTone(btn, char) {
   if (!window.speechSynthesis) {
     showToast('您的浏览器不支持语音功能', 'error');
     return;
   }
 
-  // Stop any current speech
   window.speechSynthesis.cancel();
-
-  // Reset all play buttons
   document.querySelectorAll('.tone-play').forEach(b => b.classList.remove('playing'));
 
-  const utter = new SpeechSynthesisUtterance(description);
+  // Wait a tick to ensure cancel completes before speaking
+  setTimeout(() => {
+    const utter = new SpeechSynthesisUtterance(char);
 
-  // Try to find a Cantonese or Chinese voice
-  const voices = window.speechSynthesis.getVoices();
-  const cantoneseVoice = voices.find(v =>
-    v.lang === 'zh-HK' || v.lang === 'yue' || v.name.toLowerCase().includes('cantonese')
-  );
-  const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+    const voices = window.speechSynthesis.getVoices();
+    const cantoneseVoice = voices.find(v =>
+      v.lang === 'zh-HK' || v.lang === 'yue' || v.name.toLowerCase().includes('cantonese')
+    );
+    const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
 
-  if (cantoneseVoice) {
-    utter.voice = cantoneseVoice;
-    utter.lang = 'zh-HK';
-  } else if (chineseVoice) {
-    utter.voice = chineseVoice;
-    utter.lang = 'zh-CN';
-  } else {
-    utter.lang = 'zh-CN';
-  }
+    if (cantoneseVoice) { utter.voice = cantoneseVoice; utter.lang = 'zh-HK'; }
+    else if (chineseVoice) { utter.voice = chineseVoice; utter.lang = 'zh-CN'; }
+    else { utter.lang = 'zh-CN'; }
 
-  utter.rate = 0.85;
-  utter.pitch = 1;
+    utter.rate = 0.7;
+    utter.pitch = 1;
 
-  btn.classList.add('playing');
-  utter.onend = () => btn.classList.remove('playing');
-  utter.onerror = () => btn.classList.remove('playing');
+    btn.classList.add('playing');
+    utter.onend = () => btn.classList.remove('playing');
+    utter.onerror = () => btn.classList.remove('playing');
 
-  window.speechSynthesis.speak(utter);
+    window.speechSynthesis.speak(utter);
+  }, 50);
 }
 
+// Pre-load voices so they're ready when user clicks
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
 // Ensure voices are loaded
 if (window.speechSynthesis) {
   window.speechSynthesis.getVoices();
@@ -854,4 +850,3 @@ function showToast(msg, type = '') {
 </script>
 </body>
 </html>
-
