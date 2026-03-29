@@ -173,23 +173,19 @@
     border-radius: 12px; padding: 22px; margin-bottom: 14px;
   }
 
-  /* Cantonese text stays in TC font */
-  .cantonese-text {
-    font-family: 'Noto Serif TC', serif;
-    font-size: 22px; font-weight: 600; color: var(--text);
-    line-height: 1.9; margin-bottom: 18px; word-break: break-all;
+  .jyutping-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: flex-end; margin-bottom: 4px;
   }
 
-  .jyutping-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-
-  .char-unit { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .char-unit { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .char-unit .ping {
-    font-size: 11px; color: var(--blue); font-weight: 500; white-space: nowrap;
+    font-size: 12px; color: var(--blue); font-weight: 500; white-space: nowrap;
   }
   .char-unit .ping.loading { color: var(--text-muted); }
   .char-unit .char {
     font-family: 'Noto Serif TC', serif;
-    font-size: 20px; font-weight: 600; color: var(--text);
+    font-size: 26px; font-weight: 600; color: var(--text);
   }
 
   .jyutping-note {
@@ -463,7 +459,6 @@
 
       <div id="result-content">
         <div class="result-cantonese">
-          <div class="cantonese-text" id="cantonese-text"></div>
           <div class="jyutping-row" id="jyutping-row"></div>
           <div class="jyutping-note">
             ※ 蓝色为粤拼注音。点击单字可朗读。不懂粤拼？
@@ -689,8 +684,6 @@ function showResult(cantonese, jyutpings, explanation) {
   document.getElementById('loading-state').style.display = 'none';
   document.getElementById('error-msg').style.display = 'none';
   document.getElementById('result-content').style.display = 'block';
-  document.getElementById('cantonese-text').textContent = cantonese;
-
   const ex = document.getElementById('result-explain');
   if (explanation && explanation.trim()) {
     ex.textContent = '💡 ' + explanation;
