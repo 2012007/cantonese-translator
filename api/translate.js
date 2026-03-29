@@ -32,19 +32,13 @@ export default async function handler(req, res) {
     + '}\n\n'
     + 'jyutping数组长度必须与cantonese字符数完全一致，标点符号对应填空字符串。';
 
-  const endpoints = [
-    'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
-    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-  ];
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 28000);
 
-  let lastError = null;
-
-  for (const endpoint of endpoints) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 25000);
-
-      const response = await fetch(endpoint, {
+    const response = await fetch(
+      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,34 +51,30 @@ export default async function handler(req, res) {
           max_tokens: 600,
         }),
         signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || 'API错误 ' + response.status);
       }
+    );
 
-      const data = await response.json();
-      const raw = data.choices[0].message.content.trim();
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('响应格式错误');
+    clearTimeout(timeout);
 
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (!parsed.cantonese || !Array.isArray(parsed.jyutping)) {
-        throw new Error('翻译数据格式错误');
-      }
-
-      return res.status(200).json(parsed);
-
-    } catch (err) {
-      console.error('Endpoint failed:', endpoint, err.message);
-      lastError = err;
-      const isNetworkErr = err.message.includes('fetch') || err.message.includes('abort') || err.name === 'AbortError';
-      if (!isNetworkErr) break;
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'API错误 ' + response.status);
     }
-  }
 
-  return res.status(500).json({ error: lastError?.message || '翻译失败，请稍后再试' });
+    const data = await response.json();
+    const raw = data.choices[0].message.content.trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('响应格式错误');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!parsed.cantonese || !Array.isArray(parsed.jyutping)) {
+      throw new Error('翻译数据格式错误');
+    }
+
+    return res.status(200).json(parsed);
+
+  } catch (err) {
+    console.error('Translation error:', err.message);
+    return res.status(500).json({ error: err.message || '翻译失败，请稍后再试' });
+  }
 }
